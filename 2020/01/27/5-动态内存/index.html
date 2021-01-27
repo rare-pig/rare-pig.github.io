@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/easyicon_net_32.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/easyicon_net_16.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="相关概念  静态内存：保存局部static对象，类static数据成员，定义在任何函数之外的变量。  栈内存：保存定义在函数内的非static对象。  堆（自由空间）：存储动态分配对象——即程序运行时分配的对象，当动态对象不再使用时，我们的代码必须显示地销毁它们。  内存泄漏：是指程序中已动态分配的堆内存由于某种原因程序未释放或无法释放，造成系统内存的浪费，导致程序运行速度减慢甚至系统崩溃等严重后">
+<meta property="og:type" content="article">
+<meta property="og:title" content="动态内存">
+<meta property="og:url" content="http://example.com/2020/01/27/5-%E5%8A%A8%E6%80%81%E5%86%85%E5%AD%98/index.html">
+<meta property="og:site_name" content="雨天">
+<meta property="og:description" content="相关概念  静态内存：保存局部static对象，类static数据成员，定义在任何函数之外的变量。  栈内存：保存定义在函数内的非static对象。  堆（自由空间）：存储动态分配对象——即程序运行时分配的对象，当动态对象不再使用时，我们的代码必须显示地销毁它们。  内存泄漏：是指程序中已动态分配的堆内存由于某种原因程序未释放或无法释放，造成系统内存的浪费，导致程序运行速度减慢甚至系统崩溃等严重后">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="c:/Users/小明/AppData/Roaming/Typora/typora-user-images/image-20210122113345625.png">
+<meta property="og:image" content="c:/Users/小明/AppData/Roaming/Typora/typora-user-images/image-20210123184156823.png">
+<meta property="article:published_time" content="2020-01-26T16:00:00.000Z">
+<meta property="article:modified_time" content="2021-01-27T01:52:56.744Z">
+<meta property="article:author" content="雨天">
+<meta property="article:tag" content="C++">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="c:/Users/小明/AppData/Roaming/Typora/typora-user-images/image-20210122113345625.png">
+
+<link rel="canonical" href="http://example.com/2020/01/27/5-%E5%8A%A8%E6%80%81%E5%86%85%E5%AD%98/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>动态内存 | 雨天</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">雨天</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">独自灿烂</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">1</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">1</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">2</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2020/01/27/5-%E5%8A%A8%E6%80%81%E5%86%85%E5%AD%98/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://i.loli.net/2021/01/26/Y3Uu62leFSMaBIN.jpg">
+      <meta itemprop="name" content="雨天">
+      <meta itemprop="description" content="与时间做朋友">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="雨天">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          动态内存
+        </h1>
+
+        <div class="post-meta">
+	  
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-01-27 00:00:00" itemprop="dateCreated datePublished" datetime="2020-01-27T00:00:00+08:00">2020-01-27</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-01-27 09:52:56" itemprop="dateModified" datetime="2021-01-27T09:52:56+08:00">2021-01-27</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C++</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>3.4k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>3 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p><strong>相关概念</strong></p>
+<ul>
+<li><p><strong>静态内存：保存局部static对象，类static数据成员，定义在任何函数之外的变量。</strong></p>
+</li>
+<li><p><strong>栈内存：保存定义在函数内的非static对象。</strong></p>
+</li>
+<li><p><strong>堆（自由空间）：存储动态分配对象</strong>——即程序运行时分配的对象，当动态对象不再使用时，我们的代码必须显示地销毁它们。</p>
+</li>
+<li><p><strong>内存泄漏：</strong>是指程序中已动态分配的<strong>堆内存</strong>由于某种原因程序未释放或无法释放，造成<strong>系统内存</strong>的浪费，导致程序运行速度减慢甚至系统崩溃等严重后果。</p>
+<a id="more"></a>
+
+</li>
+</ul>
+<h3 id="5-1-动态内存与智能指针"><a href="#5-1-动态内存与智能指针" class="headerlink" title="5.1 动态内存与智能指针"></a>5.1 动态内存与智能指针</h3><h4 id="动态内存与智能指针"><a href="#动态内存与智能指针" class="headerlink" title="动态内存与智能指针"></a>动态内存与智能指针</h4><ul>
+<li><code>new</code>在动态内存中为对象分配空间并返回一个指向该对象的指针，可以对对象进行初始化。</li>
+<li><code>delete</code>接受一个动态对象的指针，销毁该对象，并释放与之关联的内存。</li>
+<li><code>智能指针</code>：负责自动释放所指向的对象。 <strong>C++11</strong><ul>
+<li><strong>头文件：memory</strong></li>
+<li><strong>shared_ptr</strong>:允许多个指针指向同一个对象</li>
+<li><strong>unique_ptr</strong>：独占所指向的对象</li>
+<li><strong>weak_ptr</strong>：弱引用，指向<code>shared_ptr</code>所管理的对象</li>
+</ul>
+</li>
+</ul>
+<h4 id="shared-ptr类"><a href="#shared-ptr类" class="headerlink" title="shared_ptr类"></a>shared_ptr类</h4><ul>
+<li><code>shared_ptr</code>的拷贝和赋值<ul>
+<li><strong>引用计数</strong>：每个<code>shared_ptr</code>所指向的对象都有一个关联的计数器。<ul>
+<li><strong>计数器递增：拷贝一个shared_ptr</strong>。例如：初始化另一个智能指针，作为参数传递给一个函数，作为函数的返回值。</li>
+<li><strong>计数器递减：</strong>赋予<code>shared_ptr</code>一个新值，<code>shared_ptr</code>被销毁（例如：一个局部的shared_ptr离开作用域时）</li>
+</ul>
+</li>
+</ul>
+</li>
+<li></li>
+</ul>
+<h4 id="直接管理内存"><a href="#直接管理内存" class="headerlink" title="直接管理内存"></a>直接管理内存</h4><ul>
+<li><p>一个很好的例子(p412)</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//分析下面的程序</span></span><br><span class="line"><span class="keyword">int</span> *q = <span class="keyword">new</span> <span class="keyword">int</span>(<span class="number">42</span>), *r = <span class="keyword">new</span> <span class="keyword">int</span>(<span class="number">100</span>);</span><br><span class="line">r = q;</span><br><span class="line"></span><br><span class="line"><span class="keyword">auto</span> q2 = make_shared&lt;<span class="keyword">int</span>&gt;(<span class="number">42</span>), r2 = make_shared&lt;<span class="keyword">int</span>&gt;(<span class="number">100</span>);</span><br><span class="line">r2 = q2;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h4 id="shared-ptr和new结合使用"><a href="#shared-ptr和new结合使用" class="headerlink" title="shared_ptr和new结合使用"></a>shared_ptr和new结合使用</h4></li>
+<li><p>例子:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">process</span><span class="params">(<span class="built_in">shared_ptr</span>&lt;<span class="keyword">int</span>&gt; ptr)</span></span>&#123;&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//分析下面的程序</span></span><br><span class="line"><span class="function"><span class="built_in">shared_ptr</span>&lt;<span class="keyword">int</span>&gt; <span class="title">p</span><span class="params">(<span class="keyword">new</span> <span class="keyword">int</span>(<span class="number">42</span>))</span></span>;</span><br><span class="line">process(<span class="built_in">shared_ptr</span>&lt;<span class="keyword">int</span>&gt;(p));</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">*	分析：正确。利用p临时创建一个shared_ptr赋给process的参数ptr，</span></span><br><span class="line"><span class="comment">*	p和ptr都是指向相同的int对象，该对象的引用计数被置为2。</span></span><br><span class="line"><span class="comment">*	process执行结束时，ptr被销*毁，引用计数减一，此时只有p指向该对象。</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">process(<span class="built_in">shared_ptr</span>&lt;<span class="keyword">int</span>&gt;(p.get()));</span><br><span class="line"></span><br><span class="line"><span class="comment">//std::shared_ptr&lt;int&gt;(p.get()) construct a temporary shared_ptr and copy it to parameter. However it is not a copy of p.</span></span><br></pre></td></tr></table></figure></li>
+<li><p><strong>永远不要用<code>get</code>初始化令一个只能指针或者为另一个智能指针赋值。</strong></p>
+</li>
+</ul>
+<h4 id="智能指针与异常"><a href="#智能指针与异常" class="headerlink" title="智能指针与异常"></a>智能指针与异常</h4><ul>
+<li></li>
+<li><strong>智能指针陷阱</strong><ul>
+<li>不要使用相同的内置指针初始化（或<code>reset</code>）多个智能指针。</li>
+<li>不要<code>delete get()</code>返回的指针。</li>
+<li>不使用<code>get()</code>返回的指针，记住当最后一个对应的智能指针被销毁后，指针就变得无效了。</li>
+<li>如果使用智能指针管理的资源不是new分配的内存，记住传递给它一个删除器。</li>
+</ul>
+</li>
+</ul>
+<h4 id="unique-ptr"><a href="#unique-ptr" class="headerlink" title="unique_ptr"></a>unique_ptr</h4><ul>
+<li><p>只能有一个<code>unique_ptr</code>指向一个给定的对象。当<code>unique_ptr</code>被销毁时，它所指向的对象也被销毁。 <strong>C++11</strong></p>
+</li>
+<li><p>定义一个<code>unique_ptr</code>时，需要将其绑定到一个<code>new</code>返回的指针上。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">unique_ptr</span>&lt;<span class="keyword">double</span>&gt; p1;</span><br><span class="line"><span class="function"><span class="built_in">unique_ptr</span>&lt;<span class="keyword">int</span>&gt; <span class="title">p2</span><span class="params">(<span class="keyword">new</span> <span class="keyword">int</span>(<span class="number">42</span>))</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">//unique_ptr不支持普通的拷贝和赋值操作</span></span><br><span class="line"><span class="built_in">unique_ptr</span>&lt;<span class="built_in">string</span>&gt; p3 = (<span class="keyword">new</span> <span class="built_in">string</span>(<span class="string">&quot;hello world&quot;</span>));</span><br><span class="line"><span class="function"><span class="built_in">unique_ptr</span>&lt;<span class="built_in">string</span>&gt; <span class="title">p4</span><span class="params">(p3)</span></span>;	<span class="comment">//false,不支持拷贝</span></span><br><span class="line"><span class="built_in">unique_ptr</span>&lt;<span class="built_in">string</span>&gt; p5;</span><br><span class="line">p5 = p3;	<span class="comment">//false,不支持赋值</span></span><br></pre></td></tr></table></figure></li>
+<li><p><img src="C:\Users\小明\AppData\Roaming\Typora\typora-user-images\image-20210122113345625.png" alt="image-20210122113345625"></p>
+</li>
+<li><p>我们可以调用<code>release</code>或<code>reset</code>将指针的所用权从一个<code>unique_ptr</code>转移到另一个<code>unique_ptr</code></p>
+<ul>
+<li><pre><code class="c">unique_ptr&lt;string&gt; p1(new string(&quot;hello world&quot;));
+unique_ptr&lt;string&gt; p2(p1.release());
+unique_ptr&lt;string&gt; p3(new string(&quot;boy&quot;));
+unique_ptr&lt;string&gt; p2.reset(p3.release());
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">* **例外：我们可以拷贝或赋值一个即将被销毁的unique_ptr**</span><br><span class="line"></span><br><span class="line">  * &#96;&#96;&#96;c</span><br><span class="line">    unique_ptr&lt;int&gt; clone(int p)</span><br><span class="line">    &#123;</span><br><span class="line">    	return unique_ptr&lt;int&gt;(new int(p));</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    uinque_ptr&lt;int&gt; clone2(int p)</span><br><span class="line">    &#123;</span><br><span class="line">    	unique_ptr&lt;int&gt; ret(new int(p));</span><br><span class="line">    	return ret;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+#### weak_ptr</code></pre>
+</li>
+</ul>
+</li>
+<li><p> <code>sharesd_ptr</code>管理的对象。将一个<code>weak_ptr</code>绑定到一个<code>shared_ptr</code>不会改变<code>shared_ptr</code>的引用计数。一旦最后一个指向对象的<code>shared_ptr</code>被销毁，对象就会被释放。即使有<code>weak_ptr</code>指向对象，对象也还是会被释放。</p>
+</li>
+<li><p><img src="C:\Users\小明\AppData\Roaming\Typora\typora-user-images\image-20210123184156823.png" alt="image-20210123184156823"></p>
+</li>
+<li><p>```c<br>autp p = make_shared<int>(42);<br>weak_ptr<int> wp(p);</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">* </span><br><span class="line"></span><br><span class="line">### 5.2 动态数组</span><br><span class="line"></span><br><span class="line">#### new和数组</span><br><span class="line"></span><br><span class="line">* &#96;new&#96;分配要求数量的对象并返回指向第一个对象的指针。</span><br><span class="line"></span><br><span class="line">  &#96;&#96;&#96;c</span><br><span class="line">  int *pia &#x3D; new int[getsize()];	&#x2F;&#x2F;方括号中的大小必须是整型，但不必是常量</span><br></pre></td></tr></table></figure></li>
+<li><p>使用new分配一个数组时，并非是一个数组类型的对象，而是得到<strong>一个数组元素类型的指针。</strong></p>
+</li>
+</ul>
+<ul>
+<li><p><strong>初始化动态分配对象的数组</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> *pia = <span class="keyword">new</span> <span class="keyword">int</span>[<span class="number">10</span>];	<span class="comment">//默认初始化</span></span><br><span class="line"><span class="keyword">int</span> *pia2 = <span class="keyword">new</span> <span class="keyword">int</span>[<span class="number">10</span>](); 	<span class="comment">//值初始化</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> *pia3 = <span class="keyword">new</span> <span class="keyword">int</span>[<span class="number">10</span>]&#123;<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>&#125;;	<span class="comment">//元素初始化器 c++11</span></span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
+<li><p>动态分配一个空数组合法</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">char</span> *cp = <span class="keyword">new</span> <span class="keyword">char</span>[<span class="number">0</span>];	<span class="comment">//正确，但cp不能解引用,cp不为空且不指向任何元素</span></span><br></pre></td></tr></table></figure></li>
+<li><p><strong>释放动态数组</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">delete</span> [] pa;</span><br></pre></td></tr></table></figure></li>
+<li><p><strong>智能指针和动态数组</strong></p>
+<ul>
+<li>```c<br>unique_ptr&lt;int[]&gt; up(new int[10]);<br>up.release();    //自动用delete[]销毁其指针<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">  * ![image-20210123190614270](C:\Users\小明\AppData\Roaming\Typora\typora-user-images\image-20210123190614270.png)</span><br><span class="line"></span><br><span class="line">#### allocator类</span><br><span class="line"></span><br><span class="line">* 头文件&#96;memory&#96;，该类将内存分配和对象构造分离开来。</span><br><span class="line"></span><br><span class="line">* ![image-20210123192214232](C:\Users\小明\AppData\Roaming\Typora\typora-user-images\image-20210123192214232.png)</span><br><span class="line"></span><br><span class="line">* 例子：</span><br><span class="line"></span><br><span class="line">  &#96;&#96;&#96;c</span><br><span class="line">  int n &#x3D; 10;</span><br><span class="line">  allocator&lt;string&gt; alloc;</span><br><span class="line">  auto  p &#x3D; alloc.allocate(n);&#x2F;&#x2F;分配n个未初始化的string</span><br><span class="line">  </span><br><span class="line">  auto q &#x3D; p;</span><br><span class="line">  alloc.construct(q++);</span><br><span class="line">  alloc.construct(q++, 10, &#39;c&#39;);</span><br><span class="line">  alloc.construct(q++, &quot;hello world&quot;);</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+<li></li>
+</ul>
+<h3 id="5-3-使用标准库：文本查询程序"><a href="#5-3-使用标准库：文本查询程序" class="headerlink" title="5.3 使用标准库：文本查询程序"></a>5.3 使用标准库：文本查询程序</h3><ul>
+<li><p><strong>目标</strong></p>
+<ul>
+<li>提取每个单词所关联的行号</li>
+<li>行号必须按升序出现且无重复</li>
+<li>必须能打印给定行号中的文本</li>
+</ul>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/C/" rel="tag"># C++</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2021/01/26/C++%E4%B8%AD%E7%9A%84%E6%8B%B7%E8%B4%9D%E6%8E%A7%E5%88%B6/" rel="next" title="C++中的拷贝控制">
+      C++中的拷贝控制 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E5%8A%A8%E6%80%81%E5%86%85%E5%AD%98%E4%B8%8E%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88"><span class="nav-number">1.</span> <span class="nav-text">5.1 动态内存与智能指针</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8A%A8%E6%80%81%E5%86%85%E5%AD%98%E4%B8%8E%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88"><span class="nav-number">1.1.</span> <span class="nav-text">动态内存与智能指针</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#shared-ptr%E7%B1%BB"><span class="nav-number">1.2.</span> <span class="nav-text">shared_ptr类</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%9B%B4%E6%8E%A5%E7%AE%A1%E7%90%86%E5%86%85%E5%AD%98"><span class="nav-number">1.3.</span> <span class="nav-text">直接管理内存</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#shared-ptr%E5%92%8Cnew%E7%BB%93%E5%90%88%E4%BD%BF%E7%94%A8"><span class="nav-number">1.4.</span> <span class="nav-text">shared_ptr和new结合使用</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88%E4%B8%8E%E5%BC%82%E5%B8%B8"><span class="nav-number">1.5.</span> <span class="nav-text">智能指针与异常</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#unique-ptr"><span class="nav-number">1.6.</span> <span class="nav-text">unique_ptr</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-%E4%BD%BF%E7%94%A8%E6%A0%87%E5%87%86%E5%BA%93%EF%BC%9A%E6%96%87%E6%9C%AC%E6%9F%A5%E8%AF%A2%E7%A8%8B%E5%BA%8F"><span class="nav-number">2.</span> <span class="nav-text">5.3 使用标准库：文本查询程序</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="雨天"
+      src="https://i.loli.net/2021/01/26/Y3Uu62leFSMaBIN.jpg">
+  <p class="site-author-name" itemprop="name">雨天</p>
+  <div class="site-description" itemprop="description">与时间做朋友</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">2</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2021-01 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">雨天</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+  <script defer src="/lib/three/three.min.js"></script>
+    <script defer src="/lib/three/canvas_lines.min.js"></script>
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
